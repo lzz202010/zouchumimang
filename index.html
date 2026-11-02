@@ -26,6 +26,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .layout{display:grid;grid-template-columns:minmax(0,1fr);}
 nav.rail{position:fixed;top:calc(49px + env(safe-area-inset-top,0px));bottom:0;left:0;width:290px;max-width:86vw;overflow-y:auto;background:var(--panel);border-right:1px solid var(--rule);padding:18px 14px 40px max(14px,env(safe-area-inset-left,0px));font-family:var(--sans);transform:translateX(-100%);transition:transform .2s;z-index:15}
 nav.rail.open{transform:none}
+.scrim{position:fixed;inset:0;z-index:14;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s;cursor:pointer}
+nav.rail.open~.scrim{opacity:1;pointer-events:auto}
+@media(min-width:1000px){.scrim{display:none}}
 nav.rail a{display:block;padding:7px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px;line-height:1.45;margin-bottom:2px}
 nav.rail a .n{display:block;font-size:11px;letter-spacing:.1em;color:var(--mute)}
 nav.rail a.on{background:var(--ink-soft);color:var(--ink);font-weight:700}
@@ -1669,7 +1672,9 @@ s76,-153,76,-153s77,-151,77,-151c0.7,0.7,35.7,202,105,604c67.3,400.7,102,602.7,1
 (function(){
 var rail=document.getElementById('rail'),menu=document.getElementById('menu'),links=[].slice.call(rail.querySelectorAll('a')),cur=document.getElementById('cur');
 menu.onclick=function(){var o=rail.classList.toggle('open');menu.setAttribute('aria-expanded',o)};
-document.addEventListener('click',function(e){if(rail.classList.contains('open')&&!rail.contains(e.target)&&!menu.contains(e.target)){rail.classList.remove('open');menu.setAttribute('aria-expanded',false)}});
+var scrim=document.createElement('div');scrim.className='scrim';rail.parentNode.insertBefore(scrim,rail.nextSibling);
+function closeRail(){rail.classList.remove('open');menu.setAttribute('aria-expanded',false)}
+scrim.addEventListener('click',closeRail);
 links.forEach(function(a){a.addEventListener('click',function(){rail.classList.remove('open');menu.setAttribute('aria-expanded',false)})});
 var secs=[].slice.call(document.querySelectorAll('section.chapter'));
 function spy(){var y=window.scrollY+120,id=null;secs.forEach(function(s){if(s.offsetTop<=y)id=s.id});
