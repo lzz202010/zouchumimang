@@ -52,7 +52,7 @@ var ICON={
 var ICONTXT={eye:'眼睛',heart:'心脏',gut:'肠胃',adrenal:'肾上腺',lung:'肺',ear:'耳朵',sens:'感官'};
 function brainSVG(o){o=o||{};var H=o.body?400:300,s='<svg class="bsvg" viewBox="0 0 400 '+H+'" role="img" aria-label="大脑示意图">';
  s+='<path class="b-out" d="M70 165C52 120 78 70 130 52C175 36 240 34 290 52C335 68 360 105 358 150C357 178 345 198 322 205C300 210 280 206 262 204C248 214 232 226 212 230C182 236 150 228 135 210C128 200 122 192 112 190C92 190 76 182 70 165Z"/>';
- s+='<g class="b-sul"><path d="M218 37C210 70 205 100 196 135"/><path d="M128 182C165 170 210 160 262 150"/><path d="M300 56C305 90 315 120 320 150"/><path d="M110 80C130 70 150 72 165 62"/><path d="M95 125C115 118 135 125 150 112"/><path d="M240 60C255 75 270 70 285 85"/><path d="M250 100C265 110 290 105 305 120"/><path d="M160 200C180 196 200 205 225 200"/></g>';
+ s+='<g class="b-sul"><path d="M218 37C210 70 205 100 196 135"/><path d="M128 182C165 170 210 160 262 150"/><path d="M300 56C305 90 315 120 320 150"/><path d="M110 80C130 70 150 72 165 62"/><path d="M95 125C115 118 135 125 150 112"/><path d="M240 60C255 75 270 70 285 85"/><path d="M250 100C265 110 290 105 305 120"/><path d="M160 200C180 196 200 205 225 200"/><path d="M88 150C100 140 112 146 124 136"/><path d="M140 80C150 95 168 92 178 104"/><path d="M226 50C232 66 246 72 252 88"/><path d="M262 120C276 128 288 124 300 136"/><path d="M318 80C326 96 340 100 346 118"/><path d="M276 170C290 176 306 172 318 182"/><path d="M180 214C196 212 214 218 236 212"/><path d="M104 104C112 116 128 116 136 126"/></g><g class="b-fol"><path d="M262 214C290 214 320 214 338 224"/><path d="M258 224C288 224 318 226 340 234"/><path d="M260 234C286 236 312 238 334 244"/><path d="M266 244C288 246 306 248 322 251"/></g>';
  if(o.lobes)s+='<g class="b-lobe"><text x="104" y="70">额叶</text><text x="262" y="60">顶叶</text><text x="326" y="186">枕叶</text><text x="170" y="222">颞叶</text><text x="298" y="270">小脑</text><text x="228" y="284">脑干</text></g>';
  if(o.body)s+='<path class="b-cord" d="M262 290L262 318"/><text class="b-bt" x="262" y="330" text-anchor="middle">↓ 身体</text>';
  ORDER.forEach(function(id){G[id].f.forEach(function(f){s+=shape(f,'rg'+(G[id].d?' dash':''),id)})});
@@ -259,7 +259,7 @@ V.lif=function(box){box.id='viz-lif';var st=Z.Stage(box,220),R1=Z.Row(box),si=Z.
    var dr=(tt*7)%1;Z.dot(c,bx+bw*.7,by+bh+6+dr*14,2.5,rgba(P.info,1-dr));Z.T(c,'漏',bx+bw*.7+6,by+bh+10,{s:10});
    if(sp.length&&tt-sp[sp.length-1]<.01){c.fillStyle=rgba(P.hot,.25);c.fillRect(bx,by,bw,bh);Z.T(c,'⚡',bx+bw/2,by+bh/2,{a:'center',s:26})}
    var l=bx+bw+40,r=w-6,X=function(s){return l+(r-l)*(1-(tt-s)/.25)},Y=function(v){return by+bh-v*(bh-20)};
-   L(c,l,Y(1),r,Y(1),P.hot,1,[4,3]);L(c,l,Y(0),r,Y(0),P.rule);
+   Z.grid(c,l,r,[Y(.25),Y(.5),Y(.75)]);L(c,l,Y(1),r,Y(1),P.hot,1,[4,3]);L(c,l,Y(0),r,Y(0),P.axis);
    c.beginPath();hist.forEach(function(p,i){i?c.lineTo(X(p[0]),Y(p[1])):c.moveTo(X(p[0]),Y(p[1]))});c.strokeStyle=P.ink;c.lineWidth=2;c.stroke();
    sp.forEach(function(s){L(c,X(s),Y(1),X(s),by-8,P.hot,2)});Z.T(c,'电位(水位)随时间',l,by-24,{s:11,c:P.fg});Z.T(c,'← 0.25 秒前',l,by+bh+14,{s:10});Z.T(c,'现在',r,by+bh+14,{a:'right',s:10});
    var hz=count.length;rd.innerHTML='放电频率约 <b>'+hz+' 次/秒</b>。'+(si.v<1&&!noise?'输入太弱:水位在门槛下面达到平衡,一次也不放电——这就是“阈下”。加点噪声试试,偶尔会被推过门槛。':'输入越强,水位越快涨到门槛,放电越密;桶漏得越慢(时间常数越大),越容易把零散的输入攒起来。')+' 公式:τ·dV/dt = −V + I,V 到门槛就放电并清零。'}};
@@ -412,7 +412,7 @@ V.slot=function(box){var mode=0,V2=[0,0,0],n=0,hist=[],auto=0,acc=0;tabs(box,['�
  upd();
  var inst={tick:function(dt){if(auto>0){acc+=dt;if(acc>.12){acc=0;auto--;pull()}}},draw:function(){var c=st.ctx,w=st.w,P=Z.P;st.clear();var cw=(w-10)/24,b0=140;
    Z.T(c,'每次刷新的结果',6,12,{c:P.fg,s:11,b:1});Z.T(c,'预测误差 δ(多巴胺信号)',6,66,{c:P.fg,s:11,b:1});Z.L(c,6,b0,w-4,b0,P.rule);
-   hist.forEach(function(x,i){var px=6+i*cw;c.font='15px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle=P.mute;c.fillText(x.r?'🎁':'·',px+cw/2,36);var hh=x.d*50;c.fillStyle=hh>=0?P.ok:P.bad;c.fillRect(px+2,hh>0?b0-hh:b0,cw-4,Math.abs(hh)||1)})}};
+   hist.forEach(function(x,i){var px=6+i*cw;c.font='15px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle=P.mute;c.fillText(x.r?'🎁':'·',px+cw/2,36);var hh=x.d*50;Z.bar(c,px+cw/2,b0,cw-4,Math.abs(hh)<1?1:hh,hh>=0?P.ok:P.bad)})}};
  Z.mount(box,inst)};
 
 /* 第 15 章:挑战—技能 */
@@ -467,6 +467,28 @@ V.bistable=function(box){var st=Z.Stage(box,220),R1=Z.Row(box),sh=Z.Slider(R1,'�
    Z.T(c,'旧状态',X(-1.1),h-12,{a:'center',c:P.mute,s:11});Z.T(c,'新状态',X(1.1),h-12,{a:'center',c:P.ok,s:11,b:1});
    var crit=.385;rd.innerHTML='小球现在在<b>'+(x>0?'新':'旧')+'状态</b>。'+(Math.abs(hh)<crit?' 积累的变化还没越过临界点:表面看“没变化”,其实地形一直在倾斜——这是量变。':' 越过临界点,原来那个低谷消失,系统一下子跳到另一边——这是质变。')+' 再试着往回拉:要退到比原来更远的地方才会跳回去(滞后)。好习惯和坏习惯都是这样:形成难,形成后也不容易掉回去。'}};
  Z.mount(box,inst)};
+
+/* ================= 真实标本照片 + 编号定位 ================= */
+var BEAL='John A. Beal, PhD(美国路易斯安那州立大学健康科学中心),<a href="https://creativecommons.org/licenses/by/2.5/" target="_blank" rel="noopener">CC BY 2.5</a>,来自维基共享资源';
+var PH=[
+ {t:'外侧面',src:'figs/real/brain-lateral.webp',w:701,h:487,note:'左半球,脸朝左。蓝线是两条最重要的沟,绿线是顶叶与枕叶的大致分界。',
+  pins:[[1,'额叶',[[182,263]],'pfc','约占皮层三分之一。最前面那部分就是前额叶:计划、控制冲动、工作记忆。'],[2,'顶叶',[[418,172]],'ppc','整合身体感觉与空间信息,参与注意的分配。'],[3,'颞叶',[[445,312]],'','听觉与语言理解;它的内侧深处藏着海马和杏仁核。'],[4,'枕叶',[[632,247]],'vc','视觉皮层所在。'],[5,'外侧裂',[[241,323]],'insula','大脑侧面最深的一道沟。把它扒开,里面藏着岛叶。'],[6,'中央沟',[[334,141]],'sm','前面一条是运动皮层,后面一条是触觉皮层。'],[7,'顶枕沟',[[617,113]],'','顶叶与枕叶的分界。'],[9,'额极',[[20,233]],'','额叶的最前端。'],[11,'颞极',[[187,404]],'','颞叶的最前端,杏仁核就在它后上方的深处。']],credit:BEAL,url:'https://commons.wikimedia.org/wiki/File:Human_brain_lateral_view_description.JPG'},
+ {t:'正中切面',src:'figs/real/brain-midsagittal.webp',w:701,h:488,note:'左半脑从正中剖开,<b>脸朝右</b>。穹窿和透明隔已被切除,露出脑室内部和它周围的深部核团。',
+  pins:[[1,'尾状核头部',[[480,250]],'str','纹状体的一部分,在脑室外侧壁鼓起一大块。'],[2,'尾状核体部',[[352,173],[230,195]],'str','尾状核向后延伸,弯成 C 形。'],[3,'侧脑室前角',[[558,241]],'','充满脑脊液的腔室(标本中已流空)。'],[4,'侧脑室体部',[[300,157],[133,225]],'',''],[5,'丘脑',[[245,237],[283,291]],'thal','感觉信息的中转站。'],[6,'丘脑间黏合',[[322,315]],'','连接左右丘脑的一小块组织,有些人没有。'],[7,'下丘脑 / 第三脑室',[[345,353]],'hyp','体温、饥饿、应激激素的总开关就在这一小块。']],credit:BEAL,url:'https://commons.wikimedia.org/wiki/File:Human_brain_left_dissected_midsagittal_view_description.JPG'},
+ {t:'冠状切面',src:'figs/real/brain-coronal.webp',w:702,h:487,note:'像切面包一样从耳朵前后的位置竖着切下一片(左下角小图里的蓝线),正对着你的是切面。这一刀恰好切过本书最常出场的几个深部结构。',
+  pins:[[20,'扣带回',[[375,143]],'acc','它的前部就是前扣带皮层:发现冲突与出错。'],[19,'胼胝体',[[354,177]],'','连接左右半球的最大纤维束,约 2 亿根轴突。'],[14,'尾状核',[[413,186]],'str','纹状体的一部分。'],[10,'丘脑',[[377,241]],'thal','几乎所有感觉信号的中转站。'],[11,'内囊',[[431,254]],'','大脑与脊髓之间上下行纤维的必经通道,这里一个小中风就可能导致半身不遂。'],[12,'壳核',[[452,254]],'str','纹状体的另一部分,与习惯和动作有关。'],[23,'岛叶',[[485,219]],'insula','藏在外侧裂深处的“岛”,汇总身体内部的感觉。'],[26,'海马',[[462,297]],'hip','卷在颞叶内侧,负责写入新记忆。'],[29,'黑质',[[386,298]],'vta','肉眼就能看到的一条深色带,富含多巴胺神经元。帕金森病就是这里的细胞退化。'],[9,'第三脑室',[[347,266]],'',''],[5,'脑桥',[[358,363]],'bs','脑干的一部分。'],[1,'脊髓',[[357,470]],'','']],credit:BEAL,url:'https://commons.wikimedia.org/wiki/File:Human_brain_frontal_(coronal)_section_description_2.JPG'}];
+V.photo=function(box){box.id='viz-photo';var cur=0,sel=null;
+ tabs(box,PH.map(function(p){return p.t}),function(i){cur=i;sel=null;draw()});
+ var wrap=el('div','ph-wrap',null,box),img=el('img',null,null,wrap),pins=el('div',null,null,wrap),note=el('div','viz-cap',null,box),leg=el('div','ph-legend',null,box),info=el('div','ph-info',null,box),cr=el('span','credit',null,box);
+ img.alt='真实人脑标本照片';img.loading='lazy';
+ function draw(){var p=PH[cur];img.src=p.src;img.width=p.w;img.height=p.h;note.innerHTML=p.note;cr.innerHTML='照片:'+p.credit+' · <a href="'+p.url+'" target="_blank" rel="noopener">原图与编号说明</a>';
+  leg.innerHTML='';p.pins.forEach(function(q,i){var b=el('button','chip'+(sel===i?' on':''),'<b>'+q[0]+'</b>'+q[1],leg);b.type='button';b.addEventListener('click',function(){sel=i;draw()})});
+  pins.innerHTML='';if(sel!=null){var q=p.pins[sel];q[2].forEach(function(xy){var d=el('div','ph-pin',null,pins);d.style.left=(xy[0]/p.w*100)+'%';d.style.top=(xy[1]/p.h*100)+'%'});
+   info.innerHTML='<b>'+q[0]+' · '+q[1]+'</b>　'+(q[4]||'')+(q[3]&&card(q[3])?'<a href="#" data-k="'+q[3]+'">看它的图卡 →</a>':'');var a=info.querySelector('a');if(a)a.addEventListener('click',function(e){e.preventDefault();openPop(a.dataset.k)})}
+  else info.innerHTML='点下面的名字,或直接点照片上的数字,看它是什么。'}
+ img.addEventListener('click',function(e){var p=PH[cur],r=img.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*p.w,y=(e.clientY-r.top)/r.height*p.h,best=-1,bd=60;
+  p.pins.forEach(function(q,i){q[2].forEach(function(xy){var d=Math.hypot(xy[0]-x,xy[1]-y);if(d<bd){bd=d;best=i}})});if(best>=0){sel=best;draw()}});
+ draw()};
 
 /* ================= 启动 ================= */
 [].forEach.call(document.querySelectorAll('.viz[data-viz]'),function(b){var f=V[b.dataset.viz];if(f)try{f(b)}catch(e){console.error(b.dataset.viz,e)}});

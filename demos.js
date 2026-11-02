@@ -3,13 +3,20 @@
 'use strict';
 var root=document.documentElement,P={},FONT='sans-serif';
 function cv(n){return getComputedStyle(root).getPropertyValue('--'+n).trim()}
-function pal(){['fg','mute','rule','ink','hot','ok','bad','warn','info','panel','bg','ink-soft'].forEach(function(n){P[n]=cv(n)||'#888'});FONT=cv('sans')||'sans-serif'}
+function pal(){['fg','mute','rule','ink','hot','ok','bad','warn','info','panel','bg','ink-soft','s1','s2','s3','s4','grid','axis','fg2'].forEach(function(n){P[n]=cv(n)||'#888'});FONT=cv('sans')||'sans-serif';
+ /* 画布里的数据色统一换成校验过的系列色;文字用文字色(见 T) */
+ P.ink=P.s1;P.hot=P.s2;P.ok=P.s3;P.info=P.s4;SER=[P.s1,P.s2,P.s3,P.s4,P.bad,P.warn]}
+var SER=[];
 function rgba(c,a){if(c[0]!=='#')return c;var h=c.slice(1);if(h.length===3)h=h.replace(/./g,'$&$&');var n=parseInt(h,16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')'}
 function el(tag,cls,html,par){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;if(par)par.appendChild(e);return e}
 function randn(){var u=1-Math.random(),v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
 function clamp(x,a,b){return x<a?a:x>b?b:x}
 
 /* ---- 画布与控件 ---- */
+/* 在画布上按住拖动(或鼠标悬停)读数:返回对象的 x 为 0–1 的横向位置,离开时为 null */
+function scrub(st,x0,x1){var h={x:null,on:false},cvs=st.ctx.canvas;function pos(e){var r=cvs.getBoundingClientRect(),px=(e.clientX-r.left);h.x=clamp((px-x0())/(x1()-x0()),0,1)}
+ cvs.addEventListener('pointermove',function(e){if(e.pointerType==='mouse'||h.on)pos(e)});cvs.addEventListener('pointerdown',function(e){h.on=true;pos(e)});
+ ['pointerup','pointercancel'].forEach(function(n){cvs.addEventListener(n,function(e){if(e.pointerType!=='mouse'){h.on=false;h.x=null}})});cvs.addEventListener('pointerleave',function(){h.on=false;h.x=null});return h}
 function Stage(par,h){var wrap=el('div','demo-cv',null,par),c=el('canvas',null,null,wrap),ctx=c.getContext('2d'),st={ctx:ctx,w:300,h:h};
  st.fit=function(){var w=wrap.clientWidth||300,d=window.devicePixelRatio||1;c.width=Math.round(w*d);c.height=Math.round(h*d);c.style.height=h+'px';ctx.setTransform(d,0,0,d,0,0);st.w=w};
  st.clear=function(){ctx.clearRect(0,0,st.w,st.h)};st.fit();stages.push(st);return st}
@@ -20,11 +27,20 @@ function Slider(par,label,min,max,step,val,fmt,on){var r=el('label','demo-sl',nu
 function Btn(par,label,on,pri){var b=el('button','demo-btn'+(pri?' pri':''),label,par);b.type='button';b.addEventListener('click',on);return b}
 function Read(par){return el('div','demo-read',null,par)}
 function f1(v){return v.toFixed(1)}function f2(v){return v.toFixed(2)}
-function T(c,s,x,y,o){o=o||{};c.font=(o.b?'700 ':'')+(o.s||12)+'px '+FONT;c.fillStyle=o.c||P.mute;c.textAlign=o.a||'left';c.textBaseline=o.bl||'middle';c.fillText(s,x,y)}
+/* 文字永远用文字色;若指定的是数据色,则在文字旁画一个同色小圆点表示身份 */
+function T(c,s,x,y,o){o=o||{};c.font=(o.b?'700 ':'')+(o.s||12)+'px '+FONT;var col=o.c||P.mute,a=o.a||'left';c.textBaseline=o.bl||'middle';
+ if(SER.indexOf(col)>=0&&String(s).length>2&&!o.raw){var w=c.measureText(s).width,dx;
+  if(a==='left'){dx=x+4;x+=11}else if(a==='center'){var st=x-(w+11)/2;dx=st+4;x=st+11;a='left'}else{dx=x-w-7}
+  c.beginPath();c.arc(dx,y,3.5,0,7);c.fillStyle=col;c.fill();col=o.b?P.fg:P.fg2}
+ c.fillStyle=col;c.textAlign=a;c.fillText(s,x,y)}
 function L(c,x1,y1,x2,y2,col,lw,dash){c.beginPath();c.setLineDash(dash||[]);c.strokeStyle=col;c.lineWidth=lw||1;c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();c.setLineDash([])}
-function curve(c,f,x0,x1,X,Y,col,lw,dash,fill,base){c.beginPath();c.setLineDash(dash||[]);var n=120,first=true;for(var i=0;i<=n;i++){var s=x0+(x1-x0)*i/n,y=f(s);if(!isFinite(y))continue;if(first){c.moveTo(X(s),Y(y));first=false}else c.lineTo(X(s),Y(y))}
- if(fill){c.lineTo(X(x1),base);c.lineTo(X(x0),base);c.closePath();c.fillStyle=fill;c.fill()}else{c.strokeStyle=col;c.lineWidth=lw||1.5;c.stroke()}c.setLineDash([])}
-function dot(c,x,y,r,col){c.beginPath();c.arc(x,y,r,0,7);c.fillStyle=col;c.fill()}
+function curve(c,f,x0,x1,X,Y,col,lw,dash,fill,base){c.lineCap=c.lineJoin='round';c.beginPath();c.setLineDash(dash||[]);var n=120,first=true;for(var i=0;i<=n;i++){var s=x0+(x1-x0)*i/n,y=f(s);if(!isFinite(y))continue;if(first){c.moveTo(X(s),Y(y));first=false}else c.lineTo(X(s),Y(y))}
+ if(fill){c.lineTo(X(x1),base);c.lineTo(X(x0),base);c.closePath();c.fillStyle=fill;c.fill()}else{c.strokeStyle=col;c.lineWidth=lw||2;c.stroke()}c.setLineDash([])}
+function dot(c,x,y,r,col,noRing){if(r>=3.5&&!noRing){c.beginPath();c.arc(x,y,r+2,0,7);c.fillStyle=P.panel;c.fill()}c.beginPath();c.arc(x,y,r,0,7);c.fillStyle=col;c.fill()}
+/* 柱:宽度封顶 24px,数据端 4px 圆角,基线端方角;h>0 向上,h<0 向下 */
+function bar(c,cx,base,w,h,col){w=Math.min(w,24);var x=cx-w/2,r=Math.min(4,w/2,Math.abs(h));c.fillStyle=col;c.beginPath();if(h>=0){var t=base-h;c.moveTo(x,base);c.lineTo(x,t+r);c.quadraticCurveTo(x,t,x+r,t);c.lineTo(x+w-r,t);c.quadraticCurveTo(x+w,t,x+w,t+r);c.lineTo(x+w,base)}else{var b=base-h;c.moveTo(x,base);c.lineTo(x,b-r);c.quadraticCurveTo(x,b,x+r,b);c.lineTo(x+w-r,b);c.quadraticCurveTo(x+w,b,x+w,b-r);c.lineTo(x+w,base)}c.closePath();c.fill()}
+/* 细网格线(实线、发丝宽) */
+function grid(c,x0,x1,ys){c.strokeStyle=P.grid;c.lineWidth=1;ys.forEach(function(y){c.beginPath();c.moveTo(x0,Math.round(y)+.5);c.lineTo(x1,Math.round(y)+.5);c.stroke()})}
 function gauss(x,m,s){return Math.exp(-.5*((x-m)/s)*((x-m)/s))/(s*2.5066283)}
 
 var D={};
@@ -37,15 +53,16 @@ D.three={title:'三因子规则',steps:[
  '第三个因素——神经调质 <i>M</i>(如多巴胺)——在 <i>t</i> 时刻到达,只改写标记还没消失的突触:<span class="eq">Δ<i>w</i> = <i>η</i> · <i>e</i>(<i>t</i>) · <i>M</i>(<i>t</i>) = <i>η M e</i><sub>0</sub> · exp(−<i>t</i> / <i>τ</i><sub>e</sub>)</span>奖励来得越晚,能改写的越少;晚过几个 <i>τ</i><sub>e</sub>,就几乎学不到了。'],
  init:function(b){
   var st=Stage(b,196),R=Row(b),sd=Slider(R,'多巴胺延迟',.2,6,.1,1.5,function(v){return f1(v)+' 秒'},reset),stau=Slider(R,'资格迹 <i>τ</i><sub>e</sub>',.4,4,.1,1.5,function(v){return f1(v)+' 秒'},reset),rd=Read(b);
+  var hs=scrub(st,function(){return 52},function(){return st.w-60});el('div','chart-note','提示:在图上按住拖动(电脑上移动鼠标)可以查看任意时刻。',b);
   var t=0,T0=.5,TT=8;function reset(){t=0}
-  return {tick:function(dt){t+=dt*1.25;if(t>TT+1.2)t=0},draw:function(){
+  return {tick:function(dt){if(hs.x!=null){t=hs.x*TT;return}t+=dt*1.25;if(t>TT+1.2)t=0},draw:function(){
    var c=st.ctx,w=st.w,l=52,r=w-60,X=function(s){return l+(r-l)*s/TT};st.clear();
    var d=sd.v,tau=stau.v,tm=T0+d,ew=Math.exp(-d/tau),now=Math.min(t,TT);
    var e=function(s){return s<T0?0:Math.exp(-(s-T0)/tau)},M=function(s){return Math.exp(-Math.pow((s-tm)/.13,2))};
    T(c,'共同放电',4,20);L(c,X(T0),10,X(T0),30,P.ink,2);L(c,X(T0)+4,10,X(T0)+4,30,P.info,2);
    var y0=110,Y=function(v){return y0-v*58};T(c,'资格迹 e',4,80);
    curve(c,e,0,TT,X,Y,P.rule,1.5,[4,4]);
-   if(now>0){curve(c,e,0,now,X,Y,null,0,null,rgba(P.ink,.18),y0);curve(c,e,0,now,X,Y,P.ink,2)}
+   if(now>0){curve(c,e,0,now,X,Y,null,0,null,rgba(P.ink,.1),y0);curve(c,e,0,now,X,Y,P.ink,2)}
    L(c,l,y0,r,y0,P.rule);
    var y3=170,Y3=function(v){return y3-v*36};T(c,'多巴胺 M',4,150);
    curve(c,M,0,TT,X,Y3,rgba(P.hot,.35),1.5,[4,4]);if(now>0)curve(c,M,0,now,X,Y3,P.hot,2);L(c,l,y3,r,y3,P.rule);
@@ -54,7 +71,7 @@ D.three={title:'三因子规则',steps:[
    L(c,X(now),36,X(now),y3,P.mute,1);
    for(var k=0;k<=TT;k+=2)T(c,k+(k===TT?' 秒':''),X(k),186,{a:'center',s:11});
    var bx=r+22,bw=24,bt=50,bb=y3,fr=t>=tm?Math.min(1,(t-tm)/.5):0;
-   c.strokeStyle=P.rule;c.strokeRect(bx,bt,bw,bb-bt);c.fillStyle=P.ok;var hh=(bb-bt)*ew*fr;c.fillRect(bx,bb-hh,bw,hh);T(c,'Δw',bx+bw/2,bt-12,{a:'center',b:1,c:P.fg});
+   grid(c,bx-2,bx+bw+2,[bt,(bt+bb)/2]);L(c,bx-2,bb,bx+bw+2,bb,P.axis);var hh=(bb-bt)*ew*fr;bar(c,bx+bw/2,bb,bw,hh,P.ok);T(c,'Δw',bx+bw/2,bt-12,{a:'center',b:1,c:P.fg});
    rd.innerHTML='多巴胺在共同放电后 '+f1(d)+' 秒到达,资格迹还剩 '+Math.round(ew*100)+'% → <b>Δw = η·e·M ≈ '+f2(ew)+'</b>(取 η = M = 1)。把延迟拉长,或把 τ<sub>e</sub> 调短,看 Δw 怎么缩水。';
   }}}};
 
@@ -75,7 +92,7 @@ D.fe={title:'自由能',steps:[
    draw:function(){var c=st.ctx,w=st.w;st.clear();var o=so.v,lam=sl.v,so2=1/lam,m=sm.v,s=ss.v,Pi=1+lam,pm=lam*o/Pi,ps=Math.sqrt(1/Pi);
     var l=8,r=w-8,X=function(x){return l+(r-l)*(x+4)/8},base=150,Y=function(v){return base-Math.min(v,1.05)*125};
     L(c,l,base,r,base,P.rule);
-    curve(c,function(x){return gauss(x,m,s)},-4,4,X,Y,null,0,null,rgba(P.ink,.2),base);
+    curve(c,function(x){return gauss(x,m,s)},-4,4,X,Y,null,0,null,rgba(P.ink,.1),base);
     curve(c,function(x){return gauss(x,0,1)},-4,4,X,Y,P.mute,1.5,[5,4]);
     curve(c,function(x){return gauss(x,o,Math.sqrt(so2))},-4,4,X,Y,P.info,1.5);
     curve(c,function(x){return gauss(x,pm,ps)},-4,4,X,Y,P.ok,2,[2,3]);
@@ -85,7 +102,7 @@ D.fe={title:'自由能',steps:[
     lg.forEach(function(g){dot(c,lx+4,10,4,g[1]);T(c,g[0],lx+11,10,{c:P.fg,s:11});lx+=c.measureText(g[0]).width+24});
     var KL=.5*(s*s+m*m-1-Math.log(s*s)),nacc=.5*Math.log(2*Math.PI*so2)+((o-m)*(o-m)+s*s)/(2*so2),F=KL+nacc,sur=.5*Math.log(2*Math.PI*(1+so2))+o*o/(2*(1+so2));
     scale+=(Math.max(6,F*1.15)-scale)*.08;var bx=l+56,bw=r-bx,BX=function(v){return bx+bw*v/scale},by=186,bh=16;
-    T(c,'F',l,by+bh/2,{c:P.fg,b:1,s:13});c.fillStyle=P.info;c.fillRect(bx,by,BX(KL)-bx,bh);c.fillStyle=P.hot;c.fillRect(BX(KL),by,BX(F)-BX(KL),bh);
+    T(c,'F',l,by+bh/2,{c:P.fg,b:1,s:13});c.fillStyle=P.info;c.fillRect(bx,by,Math.max(0,BX(KL)-bx-1),bh);c.fillStyle=P.hot;c.fillRect(BX(KL)+1,by,Math.max(0,BX(F)-BX(KL)-1),bh);
     L(c,BX(sur),by-6,BX(sur),by+bh+6,P.fg,2);T(c,'意外 −ln p(o)',BX(sur),by+bh+14,{a:BX(sur)>w-80?'right':'center',c:P.fg,s:11});
     T(c,'复杂度',bx,by-9,{c:P.info,s:11});T(c,'−准确度',Math.min(Math.max(BX(KL)+4,bx+52),w-60),by-9,{c:P.hot,s:11});
     rd.innerHTML='<b>F = '+f2(F)+'</b> = 复杂度 '+f2(KL)+' + (−准确度) '+f2(nacc)+'。意外 = '+f2(sur)+',差距 '+f2(F-sur)+' 正是 KL[q‖后验]。点「最小化 F」,看蓝绿曲线 q 滑向虚线的真后验,F 落到意外那条线上。';
@@ -136,7 +153,7 @@ D.replay={title:'回放价值',steps:[
     for(var s=0;s<=N;s++){var x=l+s*cw+2,ww=cw-4;c.strokeStyle=P.rule;c.lineWidth=1;c.strokeRect(x,top,ww,ch);
      if(s<N){var hv=ch*V[s]/mx;c.fillStyle=rgba(P.ink,.5);c.fillRect(x,top+ch-hv,ww,hv);T(c,String(s+1),x+ww/2,top+ch+10,{a:'center',s:10});
       var nd=need(s),gn=gain(s),bw=Math.max(2,ww/3-2),bb=176,bh=52;
-      [[nd,P.info],[gn/mx,P.ok],[nd*gn/mx,P.hot]].forEach(function(q,i){var hh=bh*q[0];c.fillStyle=q[1];c.fillRect(x+i*(bw+2)+1,bb-hh,bw,hh)});L(c,x,bb,x+ww,bb,P.rule)}
+      [[nd,P.info],[gn/mx,P.ok],[nd*gn/mx,P.hot]].forEach(function(q,i){bar(c,x+i*(bw+2)+1+bw/2,bb,bw,bh*q[0],q[1])});L(c,x,bb,x+ww,bb,P.axis)}
      else{T(c,'★',x+ww/2,top+ch/2,{a:'center',s:20,c:P.warn});T(c,'奖励',x+ww/2,top+ch+10,{a:'center',s:10,c:P.warn})}}
     var ax=l+Math.min(sp.v,N)*cw+cw/2;dot(c,ax,top-6,5,P.hot);
     if(flash&&flash.a>0){var fx=l+flash.s*cw+2;c.strokeStyle=rgba(P.hot,flash.a);c.lineWidth=3;c.strokeRect(fx,top,cw-4,ch);
@@ -160,11 +177,11 @@ D.td={title:'时序差分误差',steps:[
     acc+=dt;while(acc>.035&&step<N){acc-=.035;var r=(step===RW&&!omit)?1:0,d=r+g*V[step+1]-V[step];if(step>=C)V[step]+=sa.v*d;del[step]=d;step++}
     if(step>=N){if(!first)first=del.slice();pause=.45;acc=0}},
    draw:function(){var c=st.ctx,w=st.w,l=8,r=w-8,cw=(r-l)/N;st.clear();
-    T(c,'价值 V',l,10,{c:P.ink,b:1,s:11});var vb=70;for(var s=0;s<N;s++){var h=Math.max(0,V[s])*48;c.fillStyle=rgba(P.ink,.55);c.fillRect(l+s*cw+1,vb-h,cw-2,h)}L(c,l,vb,r,vb,P.rule);
+    T(c,'价值 V',l,10,{c:P.ink,b:1,s:11});var vb=70;grid(c,l,r,[vb-48,vb-24]);for(var s=0;s<N;s++){bar(c,l+s*cw+cw/2,vb,cw-3,Math.max(0,V[s])*48,P.ink)}L(c,l,vb,r,vb,P.axis);
     var mk=function(s,t,col){var x=l+s*cw+cw/2;L(c,x,vb+4,x,206,rgba(col,.4),1,[3,3]);T(c,t,x,vb+12,{a:'center',c:col,s:11,b:1})};mk(C,'线索 💡',P.info);mk(RW,omit?'奖励(没给)':'奖励 🍬',P.warn);
-    var b0=148,S=40;T(c,'δ(多巴胺)',l,96,{c:P.fg,b:1,s:11});L(c,l,b0,r,b0,P.rule);
+    var b0=148,S=40;T(c,'δ(多巴胺)',l,96,{c:P.fg,b:1,s:11});grid(c,l,r,[b0-S,b0+S]);L(c,l,b0,r,b0,P.axis);
     if(first&&trial>1)for(s=0;s<N;s++)if(first[s]!=null){var hf=first[s]*S;c.strokeStyle=rgba(P.mute,.6);c.setLineDash([2,2]);c.strokeRect(l+s*cw+2,hf>0?b0-hf:b0,cw-4,Math.abs(hf));c.setLineDash([])}
-    for(s=0;s<N;s++)if(del[s]!=null){var hd=clamp(del[s],-1.3,1.3)*S;c.fillStyle=hd>=0?P.ok:P.bad;c.fillRect(l+s*cw+3,hd>0?b0-hd:b0,cw-6,Math.abs(hd)||1)}
+    for(s=0;s<N;s++)if(del[s]!=null){var hd=clamp(del[s],-1.3,1.3)*S;bar(c,l+s*cw+cw/2,b0,cw-5,Math.abs(hd)<1?(hd<0?-1:1):hd,hd>=0?P.ok:P.bad)}
     if(step<N){var cx=l+step*cw;L(c,cx,90,cx,206,P.mute,1)}
     T(c,'第 '+trial+' 次',r,10,{a:'right',c:P.fg,s:11});
     var dc=del[C-1]||0,dr=del[RW]||0,msg;
@@ -182,10 +199,11 @@ D.hyp={title:'双曲折扣与偏好逆转',steps:[
   var bh=Btn(R,'双曲',function(){hyp=true;bh.className='demo-btn pri';be.className='demo-btn'},1),be=Btn(R,'指数',function(){hyp=false;be.className='demo-btn pri';bh.className='demo-btn'});
   var bp=Btn(R,'❚❚',function(){run=!run;bp.textContent=run?'❚❚':'▶'});
   var sk=Slider(Row(b),'折扣率 <i>k</i>',.005,.1,.001,.02,function(v){return v.toFixed(3)}),rd=Read(b);
+  var hs=scrub(st,function(){return 34},function(){return st.w-10});el('div','chart-note','提示:在图上按住拖动(电脑上移动鼠标)可以查看任意时刻。',b);
   function val(A,T,x){var D=Math.max(0,T-x);return hyp?A/(1+sk.v*D):A*Math.exp(-re*D)}
-  return {tick:function(dt){if(!run)return;if(hold>0){hold-=dt;if(hold<=0)t=0;return}t+=dt*48;if(t>=T1){t=T1;hold=1.6}},
+  return {tick:function(dt){if(hs.x!=null){t=Math.min(T1,hs.x*T2);return}if(!run)return;if(hold>0){hold-=dt;if(hold<=0)t=0;return}t+=dt*48;if(t>=T1){t=T1;hold=1.6}},
    draw:function(){var c=st.ctx,w=st.w,l=34,r=w-10,X=function(x){return l+(r-l)*x/T2},y0=176,Y=function(v){return y0-v/115*160};st.clear();
-    L(c,l,y0,r,y0,P.rule);L(c,l,y0,l,10,P.rule);[0,50,100].forEach(function(v){T(c,String(v),l-4,Y(v),{a:'right',s:10})});
+    grid(c,l,r,[Y(50),Y(100)]);L(c,l,y0,r,y0,P.axis);[0,50,100].forEach(function(v){T(c,String(v),l-4,Y(v),{a:'right',s:10})});
     T(c,'现在',l,y0+12,{s:10});T(c,'100 元到手',X(T1),y0+12,{a:'right',s:10,c:P.ink});T(c,'110',X(T2),y0+12,{a:'right',s:10,c:P.hot});T(c,'(+30 天)',X(T2),y0+24,{a:'right',s:10,c:P.hot});
     curve(c,function(x){return val(100,T1,x)},0,T1,X,Y,P.ink,2.2);curve(c,function(x){return val(110,T2,x)},0,T2,X,Y,P.hot,2.2);
     var Ds=300-1/sk.v,xc=T1-Ds;if(hyp&&xc>0&&xc<T1){dot(c,X(xc),Y(val(100,T1,xc)),5,P.fg);T(c,'偏好逆转',X(xc),Y(val(100,T1,xc))-14,{a:'center',c:P.fg,b:1,s:11})}
@@ -201,11 +219,12 @@ D.proc={title:'拖延的计算',steps:[
  '<i>k</i> 越大(越看重眼前)、<i>C</i> 越大(任务越难受),<i>D</i>* 越小——越拖到最后。若 <i>C</i> + <i>θ</i> ≥ <i>A</i>,<i>D</i>* ≤ 0:不到截止都不会开始。'],
  init:function(b){
   var A=100,TH=10,DL=30,st=Stage(b,200),R=Row(b),sk=Slider(R,'看重眼前 <i>k</i>',.02,1,.01,.25,f2),sc=Slider(R,'努力成本 <i>C</i>',0,90,1,40,function(v){return String(v)}),rd=Read(b),x=0,hold=0;
+  var hs=scrub(st,function(){return 34},function(){return st.w-12});el('div','chart-note','提示:在图上按住拖动(电脑上移动鼠标)可以查看任意时刻。',b);
   function sv(day){return A/(1+sk.v*(DL-day))-sc.v}
-  return {tick:function(dt){if(hold>0){hold-=dt;if(hold<=0)x=0;return}x+=dt*4.5;if(x>=DL){x=DL;hold=1.5}},
+  return {tick:function(dt){if(hs.x!=null){x=hs.x*DL;return}if(hold>0){hold-=dt;if(hold<=0)x=0;return}x+=dt*4.5;if(x>=DL){x=DL;hold=1.5}},
    draw:function(){var c=st.ctx,w=st.w,l=34,r=w-12,X=function(d){return l+(r-l)*d/DL},lo=-90,hi=100,Y=function(v){return 12+(hi-clamp(v,lo,hi))/(hi-lo)*160};st.clear();
     L(c,l,Y(0),r,Y(0),P.rule);L(c,l,Y(TH),r,Y(TH),P.hot,1.5,[5,4]);T(c,'启动门槛 θ',r,Y(TH)-9,{a:'right',c:P.hot,s:11});
-    [-50,0,50,100].forEach(function(v){T(c,String(v),l-4,Y(v),{a:'right',s:10})});
+    grid(c,l,r,[Y(-50),Y(50),Y(100)]);L(c,l,Y(0),r,Y(0),P.axis);[-50,0,50,100].forEach(function(v){T(c,String(v),l-4,Y(v),{a:'right',s:10})});
     for(var d=0;d<=DL;d+=10)T(c,d===DL?'截止':'第 '+d+' 天',X(d),186,{a:d===DL?'right':'center',s:10});
     var Ds=(A/(sc.v+TH)-1)/sk.v,start=DL-Ds;
     if(Ds>0&&start<DL){var sx=Math.max(0,start);c.fillStyle=rgba(P.ok,.12);c.fillRect(X(sx),12,X(DL)-X(sx),160)}
@@ -229,11 +248,11 @@ D.ucb={title:'UCB 乐观探索',steps:[
   reset();
   return {tick:function(dt){if(!run||t>=800)return;acc+=dt;while(acc>.08&&t<800){acc-=.08;t++;var bi=0,bv=-1;for(var a=0;a<K;a++){var u=Q[a]+bonus(a);if(u>bv){bv=u;bi=a}}var rw=Math.random()<p[bi]?1:0;N[bi]++;Q[bi]+=(rw-Q[bi])/N[bi];last=bi}},
    draw:function(){var c=st.ctx,w=st.w,l=30,r=w-8,cw=(r-l)/K,y0=160,S=y0-14,Y=function(v){return y0-S*Math.min(v,1.6)/1.6};st.clear();
-    L(c,l,y0,r,y0,P.rule);[0,.5,1,1.5].forEach(function(v){T(c,String(v),l-4,Y(v),{a:'right',s:10});L(c,l,Y(v),r,Y(v),rgba(P.rule,.5))});
-    for(var a=0;a<K;a++){var x=l+a*cw+cw*.22,bw=cw*.56,bo=bonus(a),q=Q[a];
+    [.5,1,1.5].forEach(function(v){T(c,String(v),l-4,Y(v),{a:'right',s:10})});grid(c,l,r,[Y(.5),Y(1),Y(1.5)]);T(c,'0',l-4,y0,{a:'right',s:10});L(c,l,y0,r,y0,P.axis);
+    for(var a=0;a<K;a++){var cx0=l+a*cw+cw/2,bw=Math.min(24,cw*.56),x=cx0-bw/2,bo=bonus(a),q=Q[a];
      if(a===last){c.fillStyle=rgba(P.hot,.08);c.fillRect(l+a*cw+2,8,cw-4,y0-8)}
-     c.fillStyle=P.ink;c.fillRect(x,Y(q),bw,y0-Y(q));
-     if(isFinite(bo)){c.fillStyle=rgba(P.hot,.35);c.fillRect(x,Y(q+bo),bw,Y(q)-Y(q+bo))}else T(c,'?',x+bw/2,Y(1.2),{a:'center',s:18,c:P.hot,b:1});
+     bar(c,cx0,y0,bw,y0-Y(q),P.ink);
+     if(isFinite(bo)){bar(c,cx0,Y(q)-2,bw,Math.max(0,Y(q)-Y(q+bo)-2),rgba(P.hot,.45))}else T(c,'?',x+bw/2,Y(1.2),{a:'center',s:18,c:P.hot,b:1});
      if(show)L(c,x-6,Y(p[a]),x+bw+6,Y(p[a]),P.ok,2,[4,3]);
      T(c,'机器 '+'ABCD'[a],x+bw/2,y0+13,{a:'center',c:P.fg,s:11,b:1});T(c,N[a]+' 次',x+bw/2,y0+28,{a:'center',s:10})}
     dot(c,l+4,8,4,P.ink);T(c,'Q̂ 估计',l+11,8,{s:11,c:P.fg});dot(c,l+80,8,4,rgba(P.hot,.6));T(c,'探索奖励',l+87,8,{s:11,c:P.fg});
@@ -283,7 +302,7 @@ var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeou
 [].forEach.call(document.querySelectorAll('.demo[data-demo]'),build);
 requestAnimationFrame(loop);
 /* 供 atlas.js 复用:mount 把一个常显的动画挂进调度(可见时才跑) */
-window.DZ={P:P,pal:pal,rgba:rgba,el:el,randn:randn,clamp:clamp,Stage:Stage,Row:Row,Slider:Slider,Btn:Btn,Read:Read,T:T,L:L,curve:curve,dot:dot,f1:f1,f2:f2,
+window.DZ={P:P,pal:pal,rgba:rgba,el:el,randn:randn,clamp:clamp,Stage:Stage,Row:Row,Slider:Slider,Btn:Btn,Read:Read,T:T,L:L,curve:curve,dot:dot,bar:bar,grid:grid,scrub:scrub,f1:f1,f2:f2,
  mount:function(box,inst){inst.open=true;inst.vis=false;live.push(inst);if('IntersectionObserver' in window)new IntersectionObserver(function(es){inst.vis=es[0].isIntersecting}).observe(box);else inst.vis=true;pal();inst.draw();return inst}};
 document.dispatchEvent(new Event('dz-ready'));
 })();
