@@ -294,15 +294,21 @@ function build(box){var d=D[box.dataset.demo];if(!d)return;
    var nav=Row(body),nx=Btn(nav,'下一步 ▸',function(){show(k+1)},1),all=Btn(nav,'全部展开',function(){show(items.length)});
    function show(n){for(;k<n&&k<items.length;k++)items[k].classList.add('in');if(k>=items.length){nx.style.display=all.style.display='none'}}
    show(1);el('h4',null,'动画演示',body);pal();inst=d.init(body);inst.box=box;inst.vis=true;live.push(inst);
-   if('IntersectionObserver' in window)new IntersectionObserver(function(es){inst.vis=es[0].isIntersecting}).observe(body)}
-  if(inst)inst.open=on});
+   if('IntersectionObserver' in window)new IntersectionObserver(function(es){inst.vis=es[0].isIntersecting;kick()}).observe(body)}
+  if(inst)inst.open=on;kick()});
  btn.setAttribute('aria-expanded','false')}
-var lt=0;function loop(ts){var dt=Math.min(.05,(ts-lt)/1000||0);lt=ts;var any=false;live.forEach(function(d){if(d.open&&d.vis){if(!any){pal();any=true}d.tick(dt);d.draw()}});requestAnimationFrame(loop)}
+var lt=0,running=false,palDirty=true;
+function loop(ts){var dt=Math.min(.05,(ts-lt)/1000||0);lt=ts;var any=false;if(palDirty){pal();palDirty=false}
+ live.forEach(function(d){if(d.open&&d.vis){any=true;d.tick(dt);d.draw()}});
+ if(any)requestAnimationFrame(loop);else running=false}
+function kick(){if(!running){running=true;lt=performance.now();requestAnimationFrame(loop)}}
+new MutationObserver(function(){palDirty=true;kick()}).observe(root,{attributes:true,attributeFilter:['data-theme']});
+if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){palDirty=true;kick()});
 var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){stages.forEach(function(s){s.fit()})},120)});
 [].forEach.call(document.querySelectorAll('.demo[data-demo]'),build);
-requestAnimationFrame(loop);
+kick();
 /* 供 atlas.js 复用:mount 把一个常显的动画挂进调度(可见时才跑) */
 window.DZ={P:P,pal:pal,rgba:rgba,el:el,randn:randn,clamp:clamp,Stage:Stage,Row:Row,Slider:Slider,Btn:Btn,Read:Read,T:T,L:L,curve:curve,dot:dot,bar:bar,grid:grid,scrub:scrub,f1:f1,f2:f2,
- mount:function(box,inst){inst.open=true;inst.vis=false;live.push(inst);if('IntersectionObserver' in window)new IntersectionObserver(function(es){inst.vis=es[0].isIntersecting}).observe(box);else inst.vis=true;pal();inst.draw();return inst}};
+ mount:function(box,inst){inst.open=true;inst.vis=false;live.push(inst);if('IntersectionObserver' in window)new IntersectionObserver(function(es){inst.vis=es[0].isIntersecting;kick()}).observe(box);else inst.vis=true;pal();inst.draw();kick();return inst}};
 document.dispatchEvent(new Event('dz-ready'));
 })();

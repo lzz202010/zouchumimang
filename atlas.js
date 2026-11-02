@@ -468,28 +468,6 @@ V.bistable=function(box){var st=Z.Stage(box,220),R1=Z.Row(box),sh=Z.Slider(R1,'�
    var crit=.385;rd.innerHTML='小球现在在<b>'+(x>0?'新':'旧')+'状态</b>。'+(Math.abs(hh)<crit?' 积累的变化还没越过临界点:表面看“没变化”,其实地形一直在倾斜——这是量变。':' 越过临界点,原来那个低谷消失,系统一下子跳到另一边——这是质变。')+' 再试着往回拉:要退到比原来更远的地方才会跳回去(滞后)。好习惯和坏习惯都是这样:形成难,形成后也不容易掉回去。'}};
  Z.mount(box,inst)};
 
-/* ================= 真实标本照片 + 编号定位 ================= */
-var BEAL='John A. Beal, PhD(美国路易斯安那州立大学健康科学中心),<a href="https://creativecommons.org/licenses/by/2.5/" target="_blank" rel="noopener">CC BY 2.5</a>,来自维基共享资源';
-var PH=[
- {t:'外侧面',src:'figs/real/brain-lateral.webp',w:701,h:487,note:'左半球,脸朝左。蓝线是两条最重要的沟,绿线是顶叶与枕叶的大致分界。',
-  pins:[[1,'额叶',[[182,263]],'pfc','约占皮层三分之一。最前面那部分就是前额叶:计划、控制冲动、工作记忆。'],[2,'顶叶',[[418,172]],'ppc','整合身体感觉与空间信息,参与注意的分配。'],[3,'颞叶',[[445,312]],'','听觉与语言理解;它的内侧深处藏着海马和杏仁核。'],[4,'枕叶',[[632,247]],'vc','视觉皮层所在。'],[5,'外侧裂',[[241,323]],'insula','大脑侧面最深的一道沟。把它扒开,里面藏着岛叶。'],[6,'中央沟',[[334,141]],'sm','前面一条是运动皮层,后面一条是触觉皮层。'],[7,'顶枕沟',[[617,113]],'','顶叶与枕叶的分界。'],[9,'额极',[[20,233]],'','额叶的最前端。'],[11,'颞极',[[187,404]],'','颞叶的最前端,杏仁核就在它后上方的深处。']],credit:BEAL,url:'https://commons.wikimedia.org/wiki/File:Human_brain_lateral_view_description.JPG'},
- {t:'正中切面',src:'figs/real/brain-midsagittal.webp',w:701,h:488,note:'左半脑从正中剖开,<b>脸朝右</b>。穹窿和透明隔已被切除,露出脑室内部和它周围的深部核团。',
-  pins:[[1,'尾状核头部',[[480,250]],'str','纹状体的一部分,在脑室外侧壁鼓起一大块。'],[2,'尾状核体部',[[352,173],[230,195]],'str','尾状核向后延伸,弯成 C 形。'],[3,'侧脑室前角',[[558,241]],'','充满脑脊液的腔室(标本中已流空)。'],[4,'侧脑室体部',[[300,157],[133,225]],'',''],[5,'丘脑',[[245,237],[283,291]],'thal','感觉信息的中转站。'],[6,'丘脑间黏合',[[322,315]],'','连接左右丘脑的一小块组织,有些人没有。'],[7,'下丘脑 / 第三脑室',[[345,353]],'hyp','体温、饥饿、应激激素的总开关就在这一小块。']],credit:BEAL,url:'https://commons.wikimedia.org/wiki/File:Human_brain_left_dissected_midsagittal_view_description.JPG'},
- {t:'冠状切面',src:'figs/real/brain-coronal.webp',w:702,h:487,note:'像切面包一样从耳朵前后的位置竖着切下一片(左下角小图里的蓝线),正对着你的是切面。这一刀恰好切过本书最常出场的几个深部结构。',
-  pins:[[20,'扣带回',[[375,143]],'acc','它的前部就是前扣带皮层:发现冲突与出错。'],[19,'胼胝体',[[354,177]],'','连接左右半球的最大纤维束,约 2 亿根轴突。'],[14,'尾状核',[[413,186]],'str','纹状体的一部分。'],[10,'丘脑',[[377,241]],'thal','几乎所有感觉信号的中转站。'],[11,'内囊',[[431,254]],'','大脑与脊髓之间上下行纤维的必经通道,这里一个小中风就可能导致半身不遂。'],[12,'壳核',[[452,254]],'str','纹状体的另一部分,与习惯和动作有关。'],[23,'岛叶',[[485,219]],'insula','藏在外侧裂深处的“岛”,汇总身体内部的感觉。'],[26,'海马',[[462,297]],'hip','卷在颞叶内侧,负责写入新记忆。'],[29,'黑质',[[386,298]],'vta','肉眼就能看到的一条深色带,富含多巴胺神经元。帕金森病就是这里的细胞退化。'],[9,'第三脑室',[[347,266]],'',''],[5,'脑桥',[[358,363]],'bs','脑干的一部分。'],[1,'脊髓',[[357,470]],'','']],credit:BEAL,url:'https://commons.wikimedia.org/wiki/File:Human_brain_frontal_(coronal)_section_description_2.JPG'}];
-V.photo=function(box){box.id='viz-photo';var cur=0,sel=null;
- tabs(box,PH.map(function(p){return p.t}),function(i){cur=i;sel=null;draw()});
- var wrap=el('div','ph-wrap',null,box),img=el('img',null,null,wrap),pins=el('div',null,null,wrap),note=el('div','viz-cap',null,box),leg=el('div','ph-legend',null,box),info=el('div','ph-info',null,box),cr=el('span','credit',null,box);
- img.alt='真实人脑标本照片';img.loading='lazy';
- function draw(){var p=PH[cur];img.src=p.src;img.width=p.w;img.height=p.h;note.innerHTML=p.note;cr.innerHTML='照片:'+p.credit+' · <a href="'+p.url+'" target="_blank" rel="noopener">原图与编号说明</a>';
-  leg.innerHTML='';p.pins.forEach(function(q,i){var b=el('button','chip'+(sel===i?' on':''),'<b>'+q[0]+'</b>'+q[1],leg);b.type='button';b.addEventListener('click',function(){sel=i;draw()})});
-  pins.innerHTML='';if(sel!=null){var q=p.pins[sel];q[2].forEach(function(xy){var d=el('div','ph-pin',null,pins);d.style.left=(xy[0]/p.w*100)+'%';d.style.top=(xy[1]/p.h*100)+'%'});
-   info.innerHTML='<b>'+q[0]+' · '+q[1]+'</b>　'+(q[4]||'')+(q[3]&&card(q[3])?'<a href="#" data-k="'+q[3]+'">看它的图卡 →</a>':'');var a=info.querySelector('a');if(a)a.addEventListener('click',function(e){e.preventDefault();openPop(a.dataset.k)})}
-  else info.innerHTML='点下面的名字,或直接点照片上的数字,看它是什么。'}
- img.addEventListener('click',function(e){var p=PH[cur],r=img.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*p.w,y=(e.clientY-r.top)/r.height*p.h,best=-1,bd=60;
-  p.pins.forEach(function(q,i){q[2].forEach(function(xy){var d=Math.hypot(xy[0]-x,xy[1]-y);if(d<bd){bd=d;best=i}})});if(best>=0){sel=best;draw()}});
- draw()};
-
 /* ================= 启动 ================= */
 [].forEach.call(document.querySelectorAll('.viz[data-viz]'),function(b){var f=V[b.dataset.viz];if(f)try{f(b)}catch(e){console.error(b.dataset.viz,e)}});
 linkTerms();
