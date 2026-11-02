@@ -282,4 +282,8 @@ var lt=0;function loop(ts){var dt=Math.min(.05,(ts-lt)/1000||0);lt=ts;var any=fa
 var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){stages.forEach(function(s){s.fit()})},120)});
 [].forEach.call(document.querySelectorAll('.demo[data-demo]'),build);
 requestAnimationFrame(loop);
+/* 供 atlas.js 复用:mount 把一个常显的动画挂进调度(可见时才跑) */
+window.DZ={P:P,pal:pal,rgba:rgba,el:el,randn:randn,clamp:clamp,Stage:Stage,Row:Row,Slider:Slider,Btn:Btn,Read:Read,T:T,L:L,curve:curve,dot:dot,f1:f1,f2:f2,
+ mount:function(box,inst){inst.open=true;inst.vis=false;live.push(inst);if('IntersectionObserver' in window)new IntersectionObserver(function(es){inst.vis=es[0].isIntersecting}).observe(box);else inst.vis=true;pal();inst.draw();return inst}};
+document.dispatchEvent(new Event('dz-ready'));
 })();
