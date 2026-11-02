@@ -1669,6 +1669,7 @@ s76,-153,76,-153s77,-151,77,-151c0.7,0.7,35.7,202,105,604c67.3,400.7,102,602.7,1
 (function(){
 var rail=document.getElementById('rail'),menu=document.getElementById('menu'),links=[].slice.call(rail.querySelectorAll('a')),cur=document.getElementById('cur');
 menu.onclick=function(){var o=rail.classList.toggle('open');menu.setAttribute('aria-expanded',o)};
+document.addEventListener('click',function(e){if(rail.classList.contains('open')&&!rail.contains(e.target)&&!menu.contains(e.target)){rail.classList.remove('open');menu.setAttribute('aria-expanded',false)}});
 links.forEach(function(a){a.addEventListener('click',function(){rail.classList.remove('open');menu.setAttribute('aria-expanded',false)})});
 var secs=[].slice.call(document.querySelectorAll('section.chapter'));
 function spy(){var y=window.scrollY+120,id=null;secs.forEach(function(s){if(s.offsetTop<=y)id=s.id});
