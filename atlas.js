@@ -197,7 +197,7 @@ V.neuron=function(box){box.id='viz-neuron';
  for(var i=0;i<6;i++)s+='<rect class="nm" x="'+(150+i*32)+'" y="88" width="27" height="12" rx="6"/>';
  var term=['M352 94C362 80 372 74 388 70','M352 94L390 94','M352 94C362 108 372 114 388 120','M370 76L380 60','M372 112L382 132'];
  term.forEach(function(d){s+='<path class="nt" d="'+d+'"/>'});[[388,70],[390,94],[388,120],[380,60],[382,132]].forEach(function(p){s+='<circle class="nb" cx="'+p[0]+'" cy="'+p[1]+'" r="4"/>'});
- s+='<g class="nl"><text x="30" y="14">树突:收信</text><text x="100" y="140">胞体:汇总</text><text x="210" y="76">轴突 + 髓鞘:送信</text><text x="318" y="160">末梢:交给下一位</text></g>';
+ s+='<g class="nl"><text x="30" y="17">树突:收信</text><text x="100" y="140">胞体:汇总</text><text x="210" y="76">轴突 + 髓鞘:送信</text><text x="396" y="160" text-anchor="end">末梢:交给下一位</text></g>';
  s+='<g class="nfx"></g></svg>';
  box.insertAdjacentHTML('beforeend','<div class="viz-svg">'+s+'</div>');var svg=box.querySelector('svg'),fx=svg.querySelector('.nfx'),soma=svg.querySelector('.ns');
  var R1=Z.Row(box),my=true;Z.Btn(R1,'⚡ 给它一点刺激',function(){fire(3)},1);Z.Btn(R1,'太弱了:只给一下',function(){fire(1)});var bm=Z.Btn(R1,'去掉髓鞘',function(){my=!my;bm.textContent=my?'去掉髓鞘':'装回髓鞘';[].forEach.call(svg.querySelectorAll('.nm'),function(m){m.style.opacity=my?1:.08})});
