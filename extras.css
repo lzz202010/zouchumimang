@@ -169,3 +169,10 @@
 .philo{margin:1.2em 0 1.6em;padding:12px 16px;border-left:4px solid var(--bad);background:var(--panel);border-radius:0 10px 10px 0;font-size:15px}
 .philo::before{content:"哲学札记";display:block;font:700 12px var(--sans);letter-spacing:.1em;color:var(--bad);margin-bottom:4px}
 @media print{.viz,.tpop,.tpop-scrim{display:none!important}.term{border:0}}
+.rat-q{display:flex;gap:12px;justify-content:center;margin:6px 0 4px}
+.rat-q span{display:grid;place-items:center;width:58px;height:58px;border-radius:12px;background:var(--ink-soft);color:var(--ink);font:700 28px var(--serif)}
+.rat-h{text-align:center;font-size:13.5px;color:var(--mute);margin:6px 0}
+.rat .demo-row{justify-content:center}
+.rat-in{width:3em;font:600 20px var(--serif);text-align:center;border:1px solid var(--rule);border-radius:8px;padding:4px;background:var(--bg);color:var(--fg)}
+.rat-msg{text-align:center;font-size:14px;line-height:1.9;min-height:2em;margin:8px 0 0}
+.rat-msg .demo-btn{margin:4px 2px}

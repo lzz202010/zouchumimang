@@ -381,6 +381,93 @@ V.circuit=function(box){var c=CIR[box.dataset.c];if(!c)return;var k=0,auto=null;
   [].forEach.call(dots.children,function(d,j){d.classList.toggle('on',j===k)})}
  go(0)};
 
+/* ================= 新章节的互动 ================= */
+function tabs(box,names,on){var r=el('div','viz-chips one',null,box),row=el('div','chip-row',null,r),bs=[];names.forEach(function(n,i){var b=el('button','chip',n,row);b.type='button';b.addEventListener('click',function(){bs.forEach(function(x,j){x.classList.toggle('on',i===j)});on(i)});bs.push(b)});bs[0].classList.add('on');return r}
+
+/* 第 13 章:四个错觉 */
+V.illusions=function(box){var tb=tabs(box,['同一种灰','不存在的三角形','你的盲点','运动后效'],function(i){mode=i;flag=false;cd=0;upd()});
+ var st=Z.Stage(box,260),R1=Z.Row(box),mode=0,flag=false,t=0,spin=0,cd=0,b1=Z.Btn(R1,'',function(){flag=!flag;if(mode===3){cd=flag?20:0}upd()},1),rd=cap(box,'');
+ var TX=[['看左右两个小方块:哪个更亮?','把背景换成均匀的灰','恢复背景'],['你看到一个白色的三角形了吗?它的边其实一笔都没画。','把三个小圆转过去','转回来'],['手机离眼睛约 25–35 厘米。<b>闭上左眼</b>,用右眼盯住左边的「+」,慢慢把屏幕拉近或推远。到某个距离,右边的红点会消失,而条纹却是连着的——那一块其实什么都没看到,是大脑按周围的样子“补”上的。','换成没有条纹的背景','换回条纹'],['点按钮后<b>盯住旋转中心 20 秒</b>,别移开视线。停下来时继续盯着看。','开始(盯住中心)','停止']];
+ function upd(){b1.textContent=TX[mode][flag?2:1];rd.innerHTML=TX[mode][0]+(mode===0&&flag?' <b>两个方块其实一模一样</b>,是同一个灰度值。大脑不是在测亮度,而是在推断“这块表面本身是什么颜色”,并自动扣除了周围的光线。':'')+(mode===1&&flag?' 三角形消失了。你的视觉系统看到三个缺口恰好对齐,判断“前面一定挡着一个东西”——视觉皮层 V2 区的神经元甚至会对这条“虚幻的边”放电。':'')+(mode===3&&!flag&&t>1?' 停下后,静止的螺旋看起来在<b>反方向</b>扩张或收缩。负责这个运动方向的神经元“累了”,相反方向暂时占了上风。':'')}
+ upd();
+ var inst={tick:function(dt){t+=dt;if(mode===3&&flag){spin+=dt*2.2;cd-=dt;if(cd<=0){flag=false;upd()}}},draw:function(){var c=st.ctx,w=st.w,h=st.h,P=Z.P;st.clear();
+   if(mode===0){if(flag){c.fillStyle='rgb(128,128,128)';c.fillRect(0,0,w,h)}else{var g=c.createLinearGradient(0,0,w,0);g.addColorStop(0,'#111');g.addColorStop(1,'#eee');c.fillStyle=g;c.fillRect(0,0,w,h)}
+    c.fillStyle='rgb(128,128,128)';c.fillRect(w*.22-24,h/2-24,48,48);c.fillRect(w*.78-24,h/2-24,48,48)}
+   if(mode===1){c.fillStyle=P.panel;c.fillRect(0,0,w,h);var cx=w/2,cy=h/2+12,R=Math.min(w,h)*.36,pts=[[cx,cy-R],[cx-R*.87,cy+R*.5],[cx+R*.87,cy+R*.5]];
+    pts.forEach(function(p){var a=Math.atan2(cy-p[1],cx-p[0]),rot=flag?Math.PI:0;c.beginPath();c.moveTo(p[0],p[1]);c.arc(p[0],p[1],26,a+.52+rot,a-.52+rot+Math.PI*2);c.closePath();c.fillStyle=P.fg;c.fill()});
+    var q=[[cx,cy+R*1.0],[cx-R*.87,cy-R*.5],[cx+R*.87,cy-R*.5]];c.strokeStyle=P.fg;c.lineWidth=2;q.forEach(function(p,i){var a=q[(i+1)%3],b=q[(i+2)%3];[a,b].forEach(function(o){c.beginPath();c.moveTo(p[0]+(o[0]-p[0])*.18,p[1]+(o[1]-p[1])*.18);c.lineTo(p[0],p[1]);c.stroke()})})}
+   if(mode===2){c.fillStyle='#fff';c.fillRect(0,0,w,h);if(!flag)for(var y=0;y<h;y+=14){c.fillStyle='#3a6ea5';c.fillRect(0,y,w,7)}
+    c.fillStyle='#000';c.font='bold 34px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('+',w*.12,h/2);c.beginPath();c.arc(Math.min(w*.88,w*.12+300),h/2,11,0,7);c.fillStyle='#d33';c.fill()}
+   if(mode===3){c.fillStyle=P.panel;c.fillRect(0,0,w,h);var cx3=w/2,cy3=h/2,Rm=Math.min(w,h)*.46;c.save();c.translate(cx3,cy3);c.rotate(-spin);c.strokeStyle=P.fg;c.lineWidth=6;
+    for(var k=0;k<4;k++){c.beginPath();for(var s=0;s<=1;s+=.01){var a2=s*Math.PI*6+k*Math.PI/2,r2=s*Rm;s?c.lineTo(Math.cos(a2)*r2,Math.sin(a2)*r2):c.moveTo(0,0)}c.stroke()}c.restore();Z.dot(c,cx3,cy3,4,P.hot);
+    if(flag)Z.T(c,Math.ceil(cd)+'',w-14,16,{a:'right',c:P.hot,b:1,s:16})}}};
+ Z.mount(box,inst)};
+
+/* 第 14 章:可变奖励与固定奖励 */
+V.slot=function(box){var mode=0,V2=[0,0,0],n=0,hist=[],auto=0,acc=0;tabs(box,['不定时奖励(像信息流)','固定奖励(每第 3 次必有)'],function(i){mode=i;V2=[0,0,0];n=0;hist=[];upd()});
+ var st=Z.Stage(box,190),R1=Z.Row(box);Z.Btn(R1,'↓ 下拉刷新',pull,1);Z.Btn(R1,'自动刷 40 次',function(){auto=40});var rd=cap(box,'');
+ function pull(){n++;var s=mode===1?n%3:0,r=mode===1?(s===0?1:0):(Math.random()<.33?1:0),d=r-V2[s];V2[s]+=.25*d;hist.push({r:r,d:d});if(hist.length>24)hist.shift();upd()}
+ function upd(){var m=hist.slice(-12),avg=m.length?m.reduce(function(a,x){return a+Math.max(0,x.d)},0)/m.length:0;
+  rd.innerHTML='已刷 '+n+' 次。最近 12 次的“惊喜”(正的预测误差)平均 <b>'+avg.toFixed(2)+'</b>。'+(mode===0?' 不定时的奖励永远猜不准:每次中奖都是一个大惊喜,没中也只是小失望——于是总想“再刷一下”。':' 规律被学会以后,奖励来时已在预料之中,惊喜趋近于零——反而容易停下来。')}
+ upd();
+ var inst={tick:function(dt){if(auto>0){acc+=dt;if(acc>.12){acc=0;auto--;pull()}}},draw:function(){var c=st.ctx,w=st.w,P=Z.P;st.clear();var cw=(w-10)/24,b0=140;
+   Z.T(c,'每次刷新的结果',6,12,{c:P.fg,s:11,b:1});Z.T(c,'预测误差 δ(多巴胺信号)',6,66,{c:P.fg,s:11,b:1});Z.L(c,6,b0,w-4,b0,P.rule);
+   hist.forEach(function(x,i){var px=6+i*cw;c.font='15px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle=P.mute;c.fillText(x.r?'🎁':'·',px+cw/2,36);var hh=x.d*50;c.fillStyle=hh>=0?P.ok:P.bad;c.fillRect(px+2,hh>0?b0-hh:b0,cw-4,Math.abs(hh)||1)})}};
+ Z.mount(box,inst)};
+
+/* 第 15 章:挑战—技能 */
+V.flow=function(box){var st=Z.Stage(box,250),R1=Z.Row(box),sk=Z.Slider(R1,'你的技能',0,10,.1,4,Z.f1),ch=Z.Slider(R1,'任务难度',0,10,.1,7,Z.f1),rd=cap(box,'');
+ function zone(s,c){if(s<3&&c<3)return['冷漠','没挑战、也没机会施展:最容易去刷手机。'];if(c-s>1.6)return['焦虑','太难了:误差大到学不到东西,只剩压力。'];if(s-c>1.6)return['无聊','太简单了:一切都在预料之中,几乎没有新信息。'];return['心流','难度刚好够不着一点:每一步都有可学的误差,又不至于失控。']}
+ var inst={tick:function(){},draw:function(){var c=st.ctx,w=st.w,h=st.h,P=Z.P;st.clear();var S=Math.min(h-40,w*.55),ox=34,oy=8,X=function(v){return ox+v/10*S},Y=function(v){return oy+S-v/10*S};
+   c.fillStyle=rgba(P.bad,.10);c.beginPath();c.moveTo(X(0),Y(1.6));c.lineTo(X(8.4),Y(10));c.lineTo(X(0),Y(10));c.fill();
+   c.fillStyle=rgba(P.info,.10);c.beginPath();c.moveTo(X(1.6),Y(0));c.lineTo(X(10),Y(8.4));c.lineTo(X(10),Y(0));c.fill();
+   c.fillStyle=rgba(P.ok,.18);c.beginPath();c.moveTo(X(0),Y(1.6));c.lineTo(X(8.4),Y(10));c.lineTo(X(10),Y(10));c.lineTo(X(10),Y(8.4));c.lineTo(X(1.6),Y(0));c.lineTo(X(0),Y(0));c.fill();
+   c.strokeStyle=P.rule;c.strokeRect(X(0),Y(10),S,S);Z.T(c,'焦虑',X(1.2),Y(8.6),{c:P.bad,b:1});Z.T(c,'无聊',X(7.4),Y(1.2),{c:P.info,b:1});Z.T(c,'心流',X(5.6),Y(6.4),{c:P.ok,b:1});Z.T(c,'冷漠',X(.3),Y(.6),{s:11});
+   Z.T(c,'技能 →',X(10),Y(0)+14,{a:'right',s:10});c.save();c.translate(14,Y(5));c.rotate(-Math.PI/2);Z.T(c,'难度 →',0,0,{a:'center',s:10});c.restore();
+   Z.dot(c,X(sk.v),Y(ch.v),8,P.hot);
+   var p=1/(1+Math.exp(-(sk.v-ch.v)*.9)),gx=ox+S+24,gw=w-gx-8;if(gw>90){var gy=oy+S,gh=S*.6;Z.T(c,'学习速度(示意)',gx,gy-gh-14,{s:11,c:P.fg});
+    Z.curve(c,function(a){return Math.exp(-Math.pow((a-.85)/.16,2))},.3,1,function(a){return gx+(a-.3)/.7*gw},function(v){return gy-v*gh},P.ink,2);Z.L(c,gx,gy,gx+gw,gy,P.rule);
+    Z.T(c,'30%',gx,gy+12,{s:10});Z.T(c,'85%',gx+(.55/.7)*gw,gy+12,{a:'center',s:10,c:P.ok});Z.T(c,'100%',gx+gw,gy+12,{a:'right',s:10});var pp=clamp(p,.3,1);Z.dot(c,gx+(pp-.3)/.7*gw,gy-Math.exp(-Math.pow((pp-.85)/.16,2))*gh,5,P.hot);Z.T(c,'正确率',gx+gw/2,gy+26,{a:'center',s:10})}
+   var z=zone(sk.v,ch.v);rd.innerHTML='你在<b>'+z[0]+'</b>区:'+z[1]+' 估计成功率约 '+Math.round(p*100)+'%。'}};
+ Z.mount(box,inst)};
+
+/* 第 16 章:远距离联想小游戏 */
+V.rat=function(box){var Q=[['电','汽','火','车','交通工具'],['冰','雪','山','峰','山的最高处'],['烟','灯','篝','火','会燃烧'],['书','雨','风','声','耳朵听到的'],['海','心','眼','底','最下面'],['春','晚','微','风','空气在流动'],['阳','目','灯','光','能照亮东西'],['铁','水','马','路','用脚走的']];
+ var k=0,t0=Date.now(),tally={i:0,a:0},w=el('div','rat',null,box);
+ function show(){var q=Q[k];w.innerHTML='<div class="rat-q">'+q.slice(0,3).map(function(x){return '<span>'+x+'</span>'}).join('')+'</div><p class="rat-h">找一个字,能和上面三个字分别组成常用词。('+(k+1)+'/'+Q.length+')</p><div class="demo-row"><input class="rat-in" maxlength="2" placeholder="?" aria-label="答案"><button type="button" class="demo-btn pri rat-ok">确定</button><button type="button" class="demo-btn rat-hint">提示</button><button type="button" class="demo-btn rat-skip">看答案</button></div><p class="rat-msg"></p>';
+  t0=Date.now();var inp=w.querySelector('.rat-in'),msg=w.querySelector('.rat-msg');
+  w.querySelector('.rat-ok').onclick=function(){var v=inp.value.trim();if(v===q[3])solved(true);else msg.innerHTML='不对哦,再想想。卡住的时候先别硬想,看看别处再回来。'};
+  inp.onkeydown=function(e){if(e.key==='Enter')w.querySelector('.rat-ok').click()};
+  w.querySelector('.rat-hint').onclick=function(){msg.innerHTML='提示:'+q[4]};w.querySelector('.rat-skip').onclick=function(){solved(false)}}
+ function solved(ok){var q=Q[k],s=((Date.now()-t0)/1000).toFixed(0),msg=w.querySelector('.rat-msg');
+  msg.innerHTML=(ok?'答对了!用时 '+s+' 秒。':'答案是「'+q[3]+'」:'+q.slice(0,3).map(function(x){return x+q[3]}).join('、')+'。')+(ok?'<br>这个答案是怎么来的? <button type="button" class="demo-btn rat-i">一下子冒出来的</button> <button type="button" class="demo-btn rat-a">一个个试出来的</button>':'<br><button type="button" class="demo-btn pri rat-n">下一题</button>');
+  var bi=msg.querySelector('.rat-i'),ba=msg.querySelector('.rat-a'),bn=msg.querySelector('.rat-n');if(bi){bi.onclick=function(){tally.i++;next()};ba.onclick=function(){tally.a++;next()}}if(bn)bn.onclick=next}
+ function next(){k++;if(k>=Q.length){w.innerHTML='<p class="rat-h">做完了!你有 <b>'+tally.i+'</b> 题是“一下子冒出来”的,<b>'+tally.a+'</b> 题是“试出来”的。研究发现,用顿悟方式得出的答案往往更准——那种“就是它!”的感觉,常常意味着大脑已经在后台完成了搜索。</p><button type="button" class="demo-btn pri">再来一遍</button>';w.querySelector('button').onclick=function(){k=0;tally={i:0,a:0};show()};return}show()}
+ show()};
+
+/* 第 17 章:实践—认识的螺旋 */
+V.spiral=function(box){var st=Z.Stage(box,250),R1=Z.Row(box),b,pts,n;
+ Z.Btn(R1,'去实践一次',function(){step(true)},1);Z.Btn(R1,'只在脑子里想一次',function(){step(false)});Z.Btn(R1,'重来',reset);var rd=cap(box,'');
+ function reset(){b=[-.8,.75];pts=[b.slice()];n={p:0,t:0}}reset();
+ function step(prac){if(prac){n.p++;var e=[-b[0]+Z.randn()*.06,-b[1]+Z.randn()*.06],rot=.7,ex=e[0]*Math.cos(rot)-e[1]*Math.sin(rot),ey=e[0]*Math.sin(rot)+e[1]*Math.cos(rot);b=[b[0]+.45*ex,b[1]+.45*ey]}else{n.t++;b=[b[0]+Z.randn()*.08,b[1]+Z.randn()*.08]}pts.push(b.slice());if(pts.length>60)pts.shift()}
+ var inst={tick:function(){},draw:function(){var c=st.ctx,w=st.w,h=st.h,P=Z.P;st.clear();var cx=w/2,cy=h/2,S=Math.min(w,h)*.42,X=function(x){return cx+x*S},Y=function(y){return cy+y*S};
+   [1,.66,.33].forEach(function(r){c.beginPath();c.arc(cx,cy,r*S,0,7);c.strokeStyle=rgba(P.rule,.8);c.lineWidth=1;c.stroke()});Z.dot(c,cx,cy,7,P.ok);Z.T(c,'客观规律',cx,cy+18,{a:'center',c:P.ok,s:11,b:1});
+   c.beginPath();pts.forEach(function(p,i){i?c.lineTo(X(p[0]),Y(p[1])):c.moveTo(X(p[0]),Y(p[1]))});c.strokeStyle=rgba(P.ink,.6);c.lineWidth=1.5;c.stroke();
+   pts.forEach(function(p){Z.dot(c,X(p[0]),Y(p[1]),2,P.ink)});Z.dot(c,X(b[0]),Y(b[1]),7,P.hot);Z.T(c,'你的认识',X(b[0])+10,Y(b[1])-10,{c:P.hot,s:11,b:1});
+   var err=Math.sqrt(b[0]*b[0]+b[1]*b[1]);rd.innerHTML='实践 '+n.p+' 次,空想 '+n.t+' 次,认识与规律的距离 <b>'+err.toFixed(2)+'</b>。'+(n.t>n.p?' 只在脑子里想,没有误差信号,认识只会原地打转——这正是回避的代价(第 2 章)。':' 每次实践带回一个误差,认识沿着螺旋一圈圈逼近规律:“实践、认识、再实践、再认识”。')}};
+ Z.mount(box,inst)};
+
+/* 第 17 章:量变与质变(双稳态) */
+V.bistable=function(box){var st=Z.Stage(box,220),R1=Z.Row(box),sh=Z.Slider(R1,'一点点积累的变化',-.7,.7,.01,-.3,Z.f2),R2=Z.Row(box),x=-1,run=0;
+ Z.Btn(R2,'每天进步一点',function(){run=1},1);Z.Btn(R2,'每天退一点',function(){run=-1});Z.Btn(R2,'停',function(){run=0});var rd=cap(box,'');
+ function U(v,hh){return v*v*v*v/4-v*v/2-hh*v}
+ var inst={tick:function(dt){if(run){sh.set(clamp(sh.v+run*dt*.12,-.7,.7));if(Math.abs(sh.v)>=.7)run=0}var hh=sh.v;for(var i=0;i<20;i++)x-=(x*x*x-x-hh)*dt*.15+Z.randn()*.002},
+  draw:function(){var c=st.ctx,w=st.w,h=st.h,P=Z.P,hh=sh.v;st.clear();var X=function(v){return w/2+v*w*.28},Y=function(u){return h-30-(u+.4)*((h-60)/1.25)};
+   Z.curve(c,function(v){return U(v,hh)},-1.75,1.75,X,Y,P.ink,2.5);Z.dot(c,X(x),Y(U(x,hh))-9,9,P.hot);
+   Z.T(c,'旧状态',X(-1.1),h-12,{a:'center',c:P.mute,s:11});Z.T(c,'新状态',X(1.1),h-12,{a:'center',c:P.ok,s:11,b:1});
+   var crit=.385;rd.innerHTML='小球现在在<b>'+(x>0?'新':'旧')+'状态</b>。'+(Math.abs(hh)<crit?' 积累的变化还没越过临界点:表面看“没变化”,其实地形一直在倾斜——这是量变。':' 越过临界点,原来那个低谷消失,系统一下子跳到另一边——这是质变。')+' 再试着往回拉:要退到比原来更远的地方才会跳回去(滞后)。好习惯和坏习惯都是这样:形成难,形成后也不容易掉回去。'}};
+ Z.mount(box,inst)};
+
 /* ================= 启动 ================= */
 [].forEach.call(document.querySelectorAll('.viz[data-viz]'),function(b){var f=V[b.dataset.viz];if(f)try{f(b)}catch(e){console.error(b.dataset.viz,e)}});
 linkTerms();
